@@ -110,20 +110,26 @@ void mainpage::on_pushButton1_submit_clicked()
     QString name = ui->lineEdit1_name->text();
     QString firstp = ui->lineEdit1_first->text();
     QString nextp = ui->lineEdit1_next->text();
+    QString type = ui->lineEdit1_type->text();
 
     qDebug() << number;
     qDebug() << name;
     qDebug() << firstp;
     qDebug() << nextp;
+    qDebug() << type;
 
     QSqlQuery sql;
 
-    sql.prepare("update m_info set userpassword =:nextp, username =:name where usernumber =:number AND userpassword =:firstp");
+    //sql.prepare("update m_info set userpassword =:nextp, username =:name where usernumber =:number AND userpassword =:firstp");
+    // 调用存储过程
+    sql.prepare("call update_m_info(:number, :firstp, :nextp, :name, :type)");
 
     sql.bindValue(":number", number);
     sql.bindValue(":name", name);
     sql.bindValue(":firstp", firstp);
     sql.bindValue(":nextp", nextp);
+    sql.bindValue(":type", type);
+
 
     bool addIF = sql.exec();
     if(addIF)
@@ -145,8 +151,9 @@ void mainpage::setgoodsTableInfo()
     this->dataTableModel->setHorizontalHeaderItem(2, new QStandardItem("商品个数"));
     this->dataTableModel->setHorizontalHeaderItem(3, new QStandardItem("商品供应价格"));
     this->dataTableModel->setHorizontalHeaderItem(4, new QStandardItem("商品售价"));
-    this->dataTableModel->setHorizontalHeaderItem(5, new QStandardItem("供应商名称"));
-
+    this->dataTableModel->setHorizontalHeaderItem(5, new QStandardItem("商品描述"));
+    this->dataTableModel->setHorizontalHeaderItem(6, new QStandardItem("供应商名称"));
+    this->dataTableModel->setHorizontalHeaderItem(7, new QStandardItem("日期"));
 
     // 设置列宽
     ui->shopTable->setColumnWidth(0, 200);
@@ -155,8 +162,8 @@ void mainpage::setgoodsTableInfo()
     ui->shopTable->setColumnWidth(3, 200);
     ui->shopTable->setColumnWidth(4, 200);
     ui->shopTable->setColumnWidth(5, 500);
-
-
+    ui->shopTable->setColumnWidth(6, 500);
+    ui->shopTable->setColumnWidth(7, 500);
 
     // 设置表格只读属性
     ui->shopTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -177,7 +184,7 @@ void mainpage::on_actionxinxi_triggered()
 
     qDebug() << "已进入商品信息界面";
     QSqlQuery sql;
-    sql.prepare("select * from suply_goods_v");
+    sql.prepare("call look_goods_manage_procedure()");
     sql.exec();
 
     this->setgoodsTableInfo();
@@ -192,17 +199,16 @@ void mainpage::on_actionxinxi_triggered()
         this->dataTableModel->setItem(row, 2, new QStandardItem(sql.value("goods_number").toString()));
         this->dataTableModel->setItem(row, 3, new QStandardItem(sql.value("market_price").toString()));
         this->dataTableModel->setItem(row, 4, new QStandardItem(sql.value("shop_price").toString()));
-        this->dataTableModel->setItem(row, 5, new QStandardItem(sql.value("supplier_name").toString()));
+        this->dataTableModel->setItem(row, 5, new QStandardItem(sql.value("goods_desc").toString()));
+        this->dataTableModel->setItem(row, 6, new QStandardItem(sql.value("supplier_name").toString()));
+        this->dataTableModel->setItem(row, 7, new QStandardItem(sql.value("date").toString()));
         row++;
     }
     sql.clear();
-
 }
 
 
 //查询
-
-
 void mainpage::on_pushButton2_search_clicked()
 {
     // 查的功能
@@ -216,9 +222,9 @@ void mainpage::on_pushButton2_search_clicked()
     else
     {
         QSqlQuery sql;
-        sql.prepare("select * from suply_goods_v where goods_id =:id1 AND goods_name =:name1");
-        sql.bindValue(":name1", name);
-        sql.bindValue(":id1", id);
+        sql.prepare("call search_goods_manage_procedure(:id, :name)");
+        sql.bindValue(":name", name);
+        sql.bindValue(":id", id);
         qDebug() << id;
         qDebug() << name;
         bool addIF = sql.exec();
@@ -229,7 +235,6 @@ void mainpage::on_pushButton2_search_clicked()
             int row = 0;
             this->dataTableModel->clear();
             this->setgoodsTableInfo();
-
 //                newRowData << sql.value("goods_id").toString() << sql.value("goods_name").toString() << sql.value("goods_number").toString()
 //                           << sql.value("market_price").toString() << sql.value("shop_price").toString() << sql.value("supplier_name").toString();
 //                qDebug() << "22222222";
@@ -241,7 +246,9 @@ void mainpage::on_pushButton2_search_clicked()
                 this->dataTableModel->setItem(row, 2, new QStandardItem(sql.value("goods_number").toString()));
                 this->dataTableModel->setItem(row, 3, new QStandardItem(sql.value("market_price").toString()));
                 this->dataTableModel->setItem(row, 4, new QStandardItem(sql.value("shop_price").toString()));
-                this->dataTableModel->setItem(row, 5, new QStandardItem(sql.value("supplier_name").toString()));
+                this->dataTableModel->setItem(row, 5, new QStandardItem(sql.value("goods_desc").toString()));
+                this->dataTableModel->setItem(row, 6, new QStandardItem(sql.value("supplier_name").toString()));
+                this->dataTableModel->setItem(row, 7, new QStandardItem(sql.value("date").toString()));
             }
             sql.clear();
         }
@@ -266,12 +273,14 @@ void mainpage::on_pushButton2_modify_clicked()
     else
     {
         QSqlQuery sql;
-        sql.prepare("update goods set shop_price =:price where goods_id =:id AND goods_name =:name");
+        //sql.prepare("update goods set shop_price =:price where goods_id =:id AND goods_name =:name");
+        sql.prepare("call update_goods_shopprice(:id, :name, :price)");
         sql.bindValue(":name", name);
         sql.bindValue(":id", id);
         sql.bindValue(":price", price);
         qDebug() << id;
         qDebug() << name;
+        qDebug() << price;
         bool addIF = sql.exec();
 
         if (addIF)
@@ -286,10 +295,62 @@ void mainpage::on_pushButton2_modify_clicked()
     }
 }
 
+// 设置suplier_manage表信息
+void mainpage::set_suplier_manage_info()
+{
+    // 设置表头
+    this->dataTableModel->setHorizontalHeaderItem(0, new QStandardItem("供应商id"));
+    this->dataTableModel->setHorizontalHeaderItem(1, new QStandardItem("供应商名称"));
+    this->dataTableModel->setHorizontalHeaderItem(2, new QStandardItem("供应商简介"));
+    this->dataTableModel->setHorizontalHeaderItem(3, new QStandardItem("商品id"));
+    this->dataTableModel->setHorizontalHeaderItem(4, new QStandardItem("供应价格"));
+    this->dataTableModel->setHorizontalHeaderItem(5, new QStandardItem("供应数量"));
+    this->dataTableModel->setHorizontalHeaderItem(6, new QStandardItem("供应时间"));
+
+    // 设置列宽
+    ui->shopTable->setColumnWidth(0, 200);
+    ui->shopTable->setColumnWidth(1, 200);
+    ui->shopTable->setColumnWidth(2, 200);
+    ui->shopTable->setColumnWidth(3, 200);
+    ui->shopTable->setColumnWidth(4, 200);
+    ui->shopTable->setColumnWidth(5, 200);
+    ui->shopTable->setColumnWidth(6, 200);
+    ui->shopTable->setColumnWidth(7, 200);
+
+    // 设置表格只读属性
+    ui->shopTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    // 最后将设计化的表格，装载在表格上
+    ui->shopTable->setModel(this->dataTableModel);
+}
+
+// 进货管理
 void mainpage::on_actionjinhuo_triggered()
 {
     // 切换堆栈窗口下标到3
     ui->stackedWidget->setCurrentIndex(3);
+    qDebug() << "已进入进货管理界面";
+    QSqlQuery sql;
+    //
+    sql.prepare("select * from splier_manage_v");
+    sql.exec();
+    this->dataTableModel->clear();
+    this->set_suplier_manage_info();
+
+    int row = 0;        // 定义变量row表示表格行数
+
+    while (sql.next())
+    {
+        this->dataTableModel->setItem(row, 0, new QStandardItem(sql.value("supplier_id").toString()));
+        this->dataTableModel->setItem(row, 1, new QStandardItem(sql.value("supplier_name").toString()));
+        this->dataTableModel->setItem(row, 2, new QStandardItem(sql.value("supplier_desc").toString()));
+        this->dataTableModel->setItem(row, 3, new QStandardItem(sql.value("goods_id").toString()));
+        this->dataTableModel->setItem(row, 4, new QStandardItem(sql.value("market_price").toString()));
+        this->dataTableModel->setItem(row, 5, new QStandardItem(sql.value("goods_number").toString()));
+        this->dataTableModel->setItem(row, 6, new QStandardItem(sql.value("date").toString()));
+        row++;
+    }
+    sql.clear();
 }
 
 bool mainpage::ifSupplier()
@@ -299,11 +360,11 @@ bool mainpage::ifSupplier()
     QString supplier_desc = ui->lineEdit3_suplierDesc->text();
 
     QSqlQuery sql;
-    sql.prepare("select * from supplier where supplier_id =:supplier_id and supplier_name =:supplier_name and supplier_desc =:supplier_desc");
+    //sql.prepare("select * from supplier where supplier_id =:supplier_id and supplier_name =:supplier_name and supplier_desc =:supplier_desc");
+    sql.prepare("call ifSupplier_procedure(:supplier_id, :supplier_name, :supplier_desc)");
     sql.bindValue(":supplier_id", supplier_id);
     sql.bindValue(":supplier_name", supplier_name);
     sql.bindValue(":supplier_desc", supplier_desc);
-
 
     if(sql.exec())
         qDebug() << "执行成功";
@@ -323,7 +384,7 @@ bool mainpage::ifSupplier()
     return true;
 }
 
-void mainpage::insertSuplier_manage_v()
+void mainpage::insertSuplier()
 {
     QString supplier_id = ui->lineEdit3_suplierID->text();
     QString supplier_name = ui->lineEdit3_suplierName->text();
@@ -337,10 +398,10 @@ void mainpage::insertSuplier_manage_v()
     QString shop_price = ui->lineEdit3_shopPrice->text();
     QString goods_desc = ui->lineEdit3_goodsDesc->text();
 
-
-
     QSqlQuery sql;
-    sql.prepare("INSERT INTO splier_manage_v(supplier_id, supplier_name, supplier_desc, goods_id, goods_name, goods_number, market_price, shop_price, goods_desc) VALUES(:supplier_id, :supplier_name, :supplier_desc, :goods_id, :goods_name, :goods_number, :market_price, :shop_price, :goods_desc)");
+    //sql.prepare("INSERT INTO splier_manage_v(supplier_id, supplier_name, supplier_desc, goods_id, goods_name, goods_number, market_price, shop_price, goods_desc) VALUES(:supplier_id, :supplier_name, :supplier_desc, :goods_id, :goods_name, :goods_number, :market_price, :shop_price, :goods_desc)");
+    sql.prepare("call insert_supplier_procedure(:supplier_id, :supplier_name, :supplier_desc)");
+
     sql.bindValue(":supplier_id", supplier_id);
     sql.bindValue(":supplier_name", supplier_name);
     sql.bindValue(":supplier_desc", supplier_desc);
@@ -365,6 +426,41 @@ void mainpage::insertSuplier_manage_v()
     }
 }
 
+// 插入到供应管理跟商品中
+void mainpage::insertSuppliy_goods()
+{
+    QString supplier_id = ui->lineEdit3_suplierID->text();
+    QString supplier_name = ui->lineEdit3_suplierName->text();
+    QString supplier_desc = ui->lineEdit3_suplierDesc->text();
+
+    QString goods_id = ui->lineEdit3_goodsID->text();
+    QString goods_name = ui->lineEdit3_goodsName->text();
+    QString goods_number = ui->lineEdit3_goodsNum->text();
+
+    QString market_price = ui->lineEdit3_marketPrice->text();
+    QString shop_price = ui->lineEdit3_shopPrice->text();
+    QString goods_desc = ui->lineEdit3_goodsDesc->text();
+
+    QSqlQuery sql;
+
+    //sql.prepare("call insert_supplier_procedure(:supplier_id, :supplier_name, :supplier_desc)");
+
+    sql.bindValue(":supplier_id", supplier_id);
+    sql.bindValue(":supplier_name", supplier_name);
+    sql.bindValue(":supplier_desc", supplier_desc);
+
+    sql.bindValue(":goods_id", goods_id);
+    sql.bindValue(":goods_name", goods_name);
+    sql.bindValue(":goods_number", goods_number);
+
+    sql.bindValue(":market_price", market_price);
+    sql.bindValue(":shop_price", shop_price);
+    sql.bindValue(":goods_desc", goods_desc);
+
+    sql.exec();
+    // 待完善
+}
+
 
 void mainpage::on_pushButton3_submit_clicked()
 {
@@ -382,10 +478,230 @@ void mainpage::on_pushButton3_submit_clicked()
     if(supplierIF)
     {
         qDebug() << "该供应商已存在";
+        // 插入到 suply_manage
+        this->mainpage::insertSuppliy_goods();
     }
     else
     {
         qDebug() << "无该供应商";
-        this->mainpage::insertSuplier_manage_v();
+        this->mainpage::insertSuplier();
+        // 插入到 suplier_manage 视图中
+        this->mainpage::insertSuppliy_goods();
     }
+
 }
+
+// 商品结账
+void mainpage::on_actionjiezhang_triggered()
+{
+    // 切换堆栈窗口下标到4
+    ui->stackedWidget->setCurrentIndex(4);
+    // 显示goods
+    qDebug() << "已进入商品结账界面";
+    QSqlQuery sql;
+    sql.prepare("call look_suply_goods_v()");
+    sql.exec();
+
+    this->setgoodsTableInfo();
+    this->dataTableModel->setHorizontalHeaderItem(2, new QStandardItem("现有商品个数"));
+    this->dataTableModel->setHorizontalHeaderItem(6, new QStandardItem("供应商ID"));
+
+    int row = 0;        // 定义变量row表示表格行数
+
+    while (sql.next())
+    {
+        this->dataTableModel->setItem(row, 0, new QStandardItem(sql.value("goods_id").toString()));
+        this->dataTableModel->setItem(row, 1, new QStandardItem(sql.value("goods_name").toString()));
+        this->dataTableModel->setItem(row, 2, new QStandardItem(sql.value("goods_number").toString()));
+        this->dataTableModel->setItem(row, 3, new QStandardItem(sql.value("market_price").toString()));
+        this->dataTableModel->setItem(row, 4, new QStandardItem(sql.value("shop_price").toString()));
+        this->dataTableModel->setItem(row, 5, new QStandardItem(sql.value("goods_desc").toString()));
+        this->dataTableModel->setItem(row, 6, new QStandardItem(sql.value("supplier_id").toString()));
+        this->dataTableModel->setItem(row, 7, new QStandardItem(sql.value("date").toString()));
+        row++;
+    }
+
+    sql.clear();
+
+}
+
+bool mainpage::ifgoods(QString id, QString name, QString num)
+{
+    QSqlQuery sql;
+    sql.prepare("select * from suply_goods_v where goods_id =:id and goods_name =:name");
+    sql.bindValue(":id", id);
+    sql.bindValue(":name", name);
+    sql.bindValue(":num", num);
+    if(sql.exec())
+        qDebug() << "执行成功";
+    else
+        qDebug() << "执行失败";
+
+
+    // test code start
+//    int row = 0;
+//    while (sql.next())
+//    {
+//        this->dataTableModel->setItem(row, 0, new QStandardItem(sql.value("goods_id").toString()));
+//        this->dataTableModel->setItem(row, 1, new QStandardItem(sql.value("goods_name").toString()));
+//        this->dataTableModel->setItem(row, 2, new QStandardItem(sql.value("goods_number").toString()));
+//        this->dataTableModel->setItem(row, 3, new QStandardItem(sql.value("market_price").toString()));
+//        this->dataTableModel->setItem(row, 4, new QStandardItem(sql.value("shop_price").toString()));
+//        this->dataTableModel->setItem(row, 5, new QStandardItem(sql.value("goods_desc").toString()));
+//        this->dataTableModel->setItem(row, 6, new QStandardItem(sql.value("supplier_id").toString()));
+//        this->dataTableModel->setItem(row, 7, new QStandardItem(sql.value("date").toString()));
+//        row++;
+//    }
+
+    // test end
+    sql.next();
+    if (num.toInt() <= sql.value("goods_number").toInt())
+    {
+        qDebug() << num.toInt();
+        qDebug() << sql.value("goods_number").toInt();
+        qDebug() << "有该商品，并且有足够要求数目的商品";
+        return true;
+    }
+    else
+    {
+        qDebug() << "匹配失败";
+        return false;
+    }
+    return true;
+}
+
+// 更新商品
+bool mainpage::update_goods_num(QSqlQuery sql, QString id, QString name, QString num)
+{
+    //QSqlQuery sql;
+    sql.prepare("call update_goods_num(:id, :name, :num)");
+    sql.bindValue(":id", id);
+    sql.bindValue(":name", name);
+    int num1 = num.toInt();
+    sql.bindValue(":num", num1);
+    if(sql.exec())
+    {
+        qDebug() << "执行成功";
+        return true;
+    }
+    else
+    {
+        qDebug() << "执行失败";
+        return false;
+    }
+    return true;
+}
+
+// 查找id
+double mainpage::search_goods_price(QString gid)
+{
+    qDebug() <<"进入查找id界面";
+    QSqlQuery sql;
+    sql.prepare("select shop_price from goods where goods_id =:gid");
+    sql.bindValue(":gid", gid);
+    if(sql.exec())
+    {
+        qDebug() << "执行成功";
+    }
+    else
+    {
+        qDebug() << "执行失败";
+    }
+    double price = sql.value("shop_price").toDouble();
+    return price;
+}
+
+// 添加销售记录
+bool mainpage::insert_sales_manage(QSqlQuery sql, QString sid, QString gid, QString name, QString num)
+{
+    //QSqlQuery sql;
+    sql.prepare("call insert_sales_manage(:sid, :gid, :name, :num, :date, :gross)");
+    sql.bindValue(":sid", sid);
+    sql.bindValue(":gid", gid);
+    sql.bindValue(":name", name);
+    int num1 = num.toInt();
+    sql.bindValue(":num", num1);
+    QDateTime current_date_time =QDateTime::currentDateTime();
+    QString current_date =current_date_time.toString("yyyy-MM-dd");
+    qDebug() << current_date;
+    sql.bindValue(":date", current_date);
+    // 添加获取价钱的函数
+    double price = mainpage::search_goods_price(gid);
+    double gross = sql.value("goods_number").toInt() * price;
+    sql.bindValue(":gross", gross);
+    if(sql.exec())
+    {
+        qDebug() << "添加销售记录，添加成功！";
+        return true;
+    }
+    else
+    {
+        qDebug() << "添加销售记录失败！";
+        return false;
+    }
+    return true;
+}
+
+// 售卖按钮
+void mainpage::on_pushButton4_sale_clicked()
+{
+    QString id = ui->lineEdit4_goodsid->text();
+    QString name = ui->lineEdit4_goodsname->text();
+    QString num = ui->lineEdit4_goods_num->text();
+    QString salesid = ui->lineEdit4_salesid->text();
+
+
+    // sql.exec("start teansaction");
+    // 判断有无相应产品 判断有无足够产品
+
+    if(QSqlDatabase::database().driver()->hasFeature(QSqlDriver::Transactions))
+    {
+        //先判断该数据库是否支持事务操作
+        if(QSqlDatabase::database().transaction()) //启动事务操作
+        {
+            QSqlQuery sql;
+            bool IF = ifgoods(id, name, num);
+            if(IF)
+            {
+                qDebug() <<"开始更新";
+                if(update_goods_num(sql, id, name, num))
+                {
+                    qDebug() << "更新成功";
+                    qDebug() << "开始添加";
+                    if(insert_sales_manage(sql, salesid, id, name, num))
+                    {
+                         qDebug() <<"添加成功";
+                         if(!QSqlDatabase::database().commit())
+                         {
+                             qDebug() << QSqlDatabase::database().lastError(); //提交
+                             if(!QSqlDatabase::database().rollback())
+                             {
+                                 qDebug() << QSqlDatabase::database().lastError(); //回滚
+                             }
+                             else
+                             {
+                                 qDebug() << "二阶段事务貌似提交成功";
+                             }
+                         }
+                         else
+                         {
+                             qDebug() << "一阶段事务貌似提交成功";
+                         }
+                    }
+                    else
+                    {
+                        qDebug() << "添加失败";
+                        // sql.exec("ROLLBACK");
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+}
+
