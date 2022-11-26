@@ -597,7 +597,7 @@ double mainpage::search_goods_price(QString gid)
 {
     qDebug() <<"进入查找id界面";
     QSqlQuery sql;
-    sql.prepare("select shop_price from goods where goods_id =:gid");
+    sql.prepare("select * from goods where goods_id =:gid");
     sql.bindValue(":gid", gid);
     if(sql.exec())
     {
@@ -607,7 +607,9 @@ double mainpage::search_goods_price(QString gid)
     {
         qDebug() << "执行失败";
     }
+    sql.next();
     double price = sql.value("shop_price").toDouble();
+    qDebug() << price;
     return price;
 }
 
@@ -622,12 +624,14 @@ bool mainpage::insert_sales_manage(QSqlQuery sql, QString sid, QString gid, QStr
     int num1 = num.toInt();
     sql.bindValue(":num", num1);
     QDateTime current_date_time =QDateTime::currentDateTime();
-    QString current_date =current_date_time.toString("yyyy-MM-dd");
+    QString current_date =current_date_time.toString("yyyy-MM-dd hh:mm:ss");
     qDebug() << current_date;
     sql.bindValue(":date", current_date);
     // 添加获取价钱的函数
     double price = mainpage::search_goods_price(gid);
-    double gross = sql.value("goods_number").toInt() * price;
+    qDebug() << price;
+    double gross = num.toInt() * price;
+    qDebug() << gross;
     sql.bindValue(":gross", gross);
     if(sql.exec())
     {
@@ -697,11 +701,69 @@ void mainpage::on_pushButton4_sale_clicked()
             }
         }
     }
+}
+
+void mainpage::setsales_manageTaleInfo()
+{
+    // 清理先前的表格
+    this->dataTableModel->clear();
+    // 设置表头
+    this->dataTableModel->setHorizontalHeaderItem(0, new QStandardItem("销售id"));
+    this->dataTableModel->setHorizontalHeaderItem(1, new QStandardItem("商品id"));
+    this->dataTableModel->setHorizontalHeaderItem(2, new QStandardItem("商品名称"));
+    this->dataTableModel->setHorizontalHeaderItem(3, new QStandardItem("商品个数"));
+    this->dataTableModel->setHorizontalHeaderItem(4, new QStandardItem("日期"));
+    this->dataTableModel->setHorizontalHeaderItem(5, new QStandardItem("总价钱"));
+
+    // 设置列宽
+    ui->shopTable->setColumnWidth(0, 200);
+    ui->shopTable->setColumnWidth(1, 200);
+    ui->shopTable->setColumnWidth(2, 200);
+    ui->shopTable->setColumnWidth(3, 200);
+    ui->shopTable->setColumnWidth(4, 200);
+    ui->shopTable->setColumnWidth(5, 500);
 
 
 
+    // 设置表格只读属性
+    ui->shopTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
+    // 最后将设计化的表格，装载在表格上
+    ui->shopTable->setModel(this->dataTableModel);
+}
 
+void mainpage::on_actiontongji_triggered()
+{
+    ui->stackedWidget->setCurrentIndex(5);
+    qDebug("进入销售统计页面");
+    this->setsales_manageTaleInfo();
+
+    QSqlQuery sql;
+    if(sql.exec("call look_sales_manage()"))
+    {
+        qDebug("展开所有销售统计成功");
+        int row = 0;        // 定义变量row表示表格行数
+
+        while (sql.next())
+        {
+            this->dataTableModel->setItem(row, 0, new QStandardItem(sql.value("sales_id").toString()));
+            this->dataTableModel->setItem(row, 1, new QStandardItem(sql.value("goods_id").toString()));
+            this->dataTableModel->setItem(row, 2, new QStandardItem(sql.value("goods_name").toString()));
+            this->dataTableModel->setItem(row, 3, new QStandardItem(sql.value("goods_number").toString()));
+            this->dataTableModel->setItem(row, 4, new QStandardItem(sql.value("date").toString()));
+            this->dataTableModel->setItem(row, 5, new QStandardItem(sql.value("gross_price").toString()));
+            row++;
+        }
+        sql.clear();
+    }
+    else
+    {
+        qDebug() << "展开销售统计失败";
+    }
 
 }
 
+void mainpage::on_pushButton5_submit_clicked()
+{
+
+}

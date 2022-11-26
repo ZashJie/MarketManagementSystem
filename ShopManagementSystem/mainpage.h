@@ -54,6 +54,8 @@ public:
 
     double search_goods_price(QString gid);
 
+    void setsales_manageTaleInfo();
+
 private slots:
     // 用户管理
     void on_umaction_triggered();
@@ -79,8 +81,8 @@ private slots:
     // 商品结账
     void on_actionjiezhang_triggered();
 
-//    // 商品统计
-//    void on_actiontongji_triggered();
+    // 商品统计
+    void on_actiontongji_triggered();
 
 //    // 会员信息维护
 //    void on_actionxinxi_2_triggered();
@@ -100,6 +102,8 @@ private slots:
     void on_pushButton3_submit_clicked();
 
     void on_pushButton4_sale_clicked();
+
+    void on_pushButton5_submit_clicked();
 
 private:
     Ui::mainpage *ui;
