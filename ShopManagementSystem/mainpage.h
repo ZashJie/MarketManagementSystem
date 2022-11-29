@@ -6,6 +6,8 @@
 #include <datebase.h>
 #include <QDateTime>
 #include <QSqlDriver>
+#include <QMessageBox>
+#include <QProcess>
 
 namespace Ui {
 class mainpage;
@@ -18,6 +20,8 @@ class mainpage : public QMainWindow
 public:
     explicit mainpage(QWidget *parent = nullptr);
     ~mainpage();
+
+    QMessageBox *msgBox;
 
     // 连接数据库的对象
     Database mydatabase;
@@ -90,6 +94,8 @@ private slots:
 //    // 查询会员信息
 //    void on_actionchaxun_triggered();
 
+    // 数据备份
+    void on_action_backup_triggered();
 
 
     // stackedWidget中下标为1的界面这种的“修改”按钮
@@ -105,8 +111,13 @@ private slots:
 
     void on_pushButton5_submit_clicked();
 
+    void on_pushButton0_submit_clicked();
+
+    void on_pushButton6_backup_clicked();
+
 private:
     Ui::mainpage *ui;
+
 };
 
 #endif // MAINPAGE_H

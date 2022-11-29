@@ -16,13 +16,16 @@ TEMPLATE = app
 SOURCES += main.cpp\
     datebase.cpp \
     mainpage.cpp \
+    mainpage2.cpp \
     signin_page.cpp
 
 HEADERS  += \
     datebase.h \
     mainpage.h \
+    mainpage2.h \
     signin_page.h
 
 FORMS    += \
     mainpage.ui \
+    mainpage2.ui \
     signin_page.ui

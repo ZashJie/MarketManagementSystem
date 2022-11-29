@@ -20,6 +20,4 @@ private:
 };
 
 
-
-
 #endif // DATEBASE_H
